@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
+import { Link2, Check, Star, Download, AlertTriangle, Trash2 } from 'lucide-react';
 
 interface WolfResult {
   archetype: {
@@ -12,6 +14,8 @@ interface WolfResult {
     seed: string;
   };
   svg: string;
+  imageUrl: string | null;
+  imageExpiresAt: string | null;
   wolfId: string;
 }
 
@@ -21,7 +25,11 @@ interface Props {
 
 export function WolfCard({ result }: Props) {
   const [copied, setCopied] = useState(false);
-  const { archetype, svg, wolfId } = result;
+  const [downloading, setDownloading] = useState(false);
+  const [imageDeleted, setImageDeleted] = useState(false);
+  const { archetype, svg, imageUrl, imageExpiresAt, wolfId } = result;
+
+  const currentImageUrl = imageDeleted ? null : imageUrl;
 
   const shareUrl =
     typeof window !== 'undefined'
@@ -33,6 +41,33 @@ export function WolfCard({ result }: Props) {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const handleDownload = async () => {
+    if (!wolfId) return;
+    setDownloading(true);
+    try {
+      const res = await fetch(`/api/image/download?id=${wolfId}`);
+      if (!res.ok) throw new Error('Download failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${archetype.archetypeName.replace(/\s+/g, '-')}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setImageDeleted(true);
+    } catch (err) {
+      console.error('Download error:', err);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const daysLeft = imageExpiresAt
+    ? Math.max(0, Math.ceil((new Date(imageExpiresAt).getTime() - Date.now()) / 86400000))
+    : null;
 
   const rarityStyle: Record<string, { text: string; border: string; glow: string }> = {
     common: {
@@ -63,15 +98,48 @@ export function WolfCard({ result }: Props) {
         <p
           className={`text-sm font-bold uppercase tracking-[0.3em] mt-2 ${rs.text}`}
         >
-          ✦ {archetype.rarity} ✦
+        <Star className={`w-3 h-3 inline-block ${rs.text}`} /> {archetype.rarity} <Star className={`w-3 h-3 inline-block ${rs.text}`} />
         </p>
       </div>
 
-      {/* Avatar SVG */}
-      <div
-        className={`flex justify-center mb-6 rounded-2xl overflow-hidden ${rs.glow}`}
-        dangerouslySetInnerHTML={{ __html: svg }}
-      />
+      {/* Wolf Image */}
+      {currentImageUrl ? (
+        <div className={`relative aspect-square mb-4 rounded-2xl overflow-hidden ${rs.glow}`}>
+          <Image
+            src={currentImageUrl}
+            alt={archetype.archetypeName}
+            fill
+            className="object-cover rounded-2xl"
+            sizes="(max-width: 448px) 100vw, 448px"
+          />
+        </div>
+      ) : (
+        <div
+          className={`flex justify-center mb-4 rounded-2xl overflow-hidden ${rs.glow}`}
+          dangerouslySetInnerHTML={{ __html: svg }}
+        />
+      )}
+
+      {/* Image retention disclaimer */}
+      {currentImageUrl && daysLeft !== null && (
+        <div className="flex items-start gap-2 mb-4 px-3 py-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+          <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-300/90 leading-relaxed">
+            This image will be <strong>auto-deleted in {daysLeft} day{daysLeft !== 1 ? 's' : ''}</strong> to save storage.
+            Download it to keep it forever.
+          </p>
+        </div>
+      )}
+
+      {/* Download deleted notice */}
+      {imageDeleted && (
+        <div className="flex items-start gap-2 mb-4 px-3 py-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+          <Trash2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-emerald-300/90 leading-relaxed">
+            Image downloaded and removed from our servers. It&apos;s saved on your device.
+          </p>
+        </div>
+      )}
 
       {/* Details */}
       <div
@@ -105,21 +173,31 @@ export function WolfCard({ result }: Props) {
 
       {/* Actions */}
       <div className="flex gap-3 mt-6">
+        {currentImageUrl && (
+          <button
+            onClick={handleDownload}
+            disabled={downloading}
+            className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 text-white font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5"
+            title="Download will remove the image from our servers"
+          >
+            <Download className="w-4 h-4" />
+            {downloading ? 'Downloading...' : 'Download & Save'}
+          </button>
+        )}
         <button
           onClick={handleCopy}
           className="flex-1 py-3 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl transition-all duration-200"
         >
-          {copied ? '✓ Copied!' : '🔗 Copy Share Link'}
+          {copied ? <><Check className="w-4 h-4 inline-block mr-1" /> Copied!</> : <><Link2 className="w-4 h-4 inline-block mr-1" /> Share Link</>}
         </button>
-        <a
-          href={shareUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="py-3 px-6 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl transition-colors"
-        >
-          View
-        </a>
       </div>
+
+      {/* Download disclaimer */}
+      {currentImageUrl && (
+        <p className="text-[10px] text-gray-600 text-center mt-3 leading-relaxed">
+          Downloading saves the image to your device and deletes it from our servers to reduce storage costs.
+        </p>
+      )}
     </div>
   );
 }

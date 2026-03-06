@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { Mail, Dog, Loader, User } from 'lucide-react';
 import { createSupabaseBrowser } from '@/lib/supabase/client';
 import { AuthForm } from './AuthForm';
 import { Quiz, type QuizAnswers } from './Quiz';
@@ -24,6 +25,8 @@ interface WolfResult {
     seed: string;
   };
   svg: string;
+  imageUrl: string | null;
+  imageExpiresAt: string | null;
   wolfId: string;
 }
 
@@ -121,6 +124,13 @@ export function MainApp({ initialUser }: { initialUser: UserInfo | null }) {
           <span className="text-xs text-gray-500 hidden sm:block truncate max-w-[150px]">
             {user.email}
           </span>
+          <Link
+            href="/profile"
+            className="text-sm text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 p-1.5 rounded-lg transition-colors"
+            title="My Wolves"
+          >
+            <User className="w-4 h-4" />
+          </Link>
           <button
             onClick={handleSignOut}
             className="text-sm text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg transition-colors"
@@ -175,7 +185,7 @@ export function MainApp({ initialUser }: { initialUser: UserInfo | null }) {
         <div className="flex-1 flex items-center justify-center px-4 py-20">
           {user && !user.verified ? (
             <div className="max-w-md w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 text-center">
-              <div className="text-5xl mb-4">📧</div>
+              <div className="text-5xl mb-4"><Mail className="w-12 h-12 text-emerald-400 mx-auto" /></div>
               <h2 className="text-2xl font-bold text-white mb-2">
                 Check Your Email
               </h2>
@@ -215,7 +225,7 @@ export function MainApp({ initialUser }: { initialUser: UserInfo | null }) {
               <Quiz onComplete={handleQuizComplete} />
             ) : (
               <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 text-center">
-                <div className="text-5xl mb-4">🐺</div>
+                <Dog className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
                 <h2 className="text-2xl font-bold text-white mb-2">
                   Ready to Summon
                 </h2>
@@ -235,7 +245,7 @@ export function MainApp({ initialUser }: { initialUser: UserInfo | null }) {
                   disabled={!turnstileToken}
                   className="w-full sm:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-bold text-lg rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(16,185,129,0.4)]"
                 >
-                  🐺 Summon Your Wolf
+                  <Dog className="w-5 h-5 inline-block mr-2" /> Summon Your Wolf
                 </button>
                 <button
                   onClick={() => {
@@ -257,7 +267,7 @@ export function MainApp({ initialUser }: { initialUser: UserInfo | null }) {
       {step === 'generating' && (
         <div className="flex-1 flex items-center justify-center px-4 py-20">
           <div className="text-center">
-            <div className="text-6xl sm:text-7xl mb-6 animate-bounce">🐺</div>
+            <Loader className="w-16 h-16 text-emerald-400 mx-auto mb-6 animate-spin" />
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
               Summoning Your Wolf…
             </h2>

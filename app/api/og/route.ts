@@ -11,12 +11,17 @@ export async function GET(request: NextRequest) {
   const supabase = await createSupabaseAdmin();
   const { data: wolf } = await supabase
     .from('wolves')
-    .select('archetype_name, rarity, seed, quiz_answers')
+    .select('archetype_name, rarity, seed, quiz_answers, image_url')
     .eq('id', wolfId)
     .single();
 
   if (!wolf) {
     return new NextResponse('Wolf not found', { status: 404 });
+  }
+
+  // If AI image exists, redirect to it for OG
+  if (wolf.image_url) {
+    return NextResponse.redirect(wolf.image_url, 302);
   }
 
   const svg = generateWolfSVG({

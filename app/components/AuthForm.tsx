@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Dog } from 'lucide-react';
 import { createSupabaseBrowser } from '@/lib/supabase/client';
 
 interface Props {
@@ -47,7 +48,7 @@ export function AuthForm({ onSuccess }: Props) {
   return (
     <div className="max-w-sm w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8">
       <div className="text-center mb-6">
-        <div className="text-4xl mb-2">🐺</div>
+        <Dog className="w-10 h-10 text-emerald-400 mx-auto mb-2" />
         <h2 className="text-2xl font-bold text-white">
           {mode === 'signup' ? 'Join the Pack' : 'Welcome Back'}
         </h2>

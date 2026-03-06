@@ -12,6 +12,7 @@ import { cacheGet, cacheSet } from '@/lib/cache';
 import { computeSeed, computeRarity, cacheKey } from '@/lib/rarity';
 import { generateWolfArchetype, type WolfArchetype } from '@/lib/openai';
 import { generateWolfSVG } from '@/lib/svg-generator';
+import { generateWolfImage } from '@/lib/image-gen';
 import { createSupabaseAdmin } from '@/lib/supabase/server';
 
 const VALID_ANSWERS: Record<string, string[]> = {
@@ -117,6 +118,13 @@ export async function POST(request: NextRequest) {
         terrain: body.answers.terrain,
       });
 
+      // Generate AI image
+      const imageResult = await generateWolfImage(
+        archetype,
+        body.answers.terrain,
+        body.answers.element,
+      );
+
       const supabase = await createSupabaseAdmin();
       const { data: wolf } = await supabase
         .from('wolves')
@@ -131,6 +139,8 @@ export async function POST(request: NextRequest) {
           rarity: archetype.rarity,
           openai_response: archetype,
           openai_usage: { cached: true },
+          image_url: imageResult?.imageUrl || null,
+          image_expires_at: imageResult?.imageExpiresAt || null,
         })
         .select('id')
         .single();
@@ -141,6 +151,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         archetype,
         svg,
+        imageUrl: imageResult?.imageUrl || null,
+        imageExpiresAt: imageResult?.imageExpiresAt || null,
         wolfId: wolf?.id,
         fromCache: true,
       });
@@ -158,6 +170,13 @@ export async function POST(request: NextRequest) {
       seed: archetype.seed,
       terrain: body.answers.terrain,
     });
+
+    // 10b. Generate AI image
+    const imageResult = await generateWolfImage(
+      archetype,
+      body.answers.terrain,
+      body.answers.element,
+    );
 
     // 11. Cache the result
     await cacheSet(ck, JSON.stringify(archetype));
@@ -177,6 +196,8 @@ export async function POST(request: NextRequest) {
         rarity: archetype.rarity,
         openai_response: archetype,
         openai_usage: usage,
+        image_url: imageResult?.imageUrl || null,
+        image_expires_at: imageResult?.imageExpiresAt || null,
       })
       .select('id')
       .single();
@@ -192,6 +213,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       archetype,
       svg,
+      imageUrl: imageResult?.imageUrl || null,
+      imageExpiresAt: imageResult?.imageExpiresAt || null,
       wolfId: wolf?.id,
       fromCache: false,
     });

@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import Image from 'next/image';
+import { Star } from 'lucide-react';
 import { createSupabaseAdmin } from '@/lib/supabase/server';
 import { generateWolfSVG } from '@/lib/svg-generator';
 import { notFound } from 'next/navigation';
@@ -48,12 +50,20 @@ export default async function WolfSharePage({ params }: Props) {
 
   if (!wolf) notFound();
 
-  const svg = generateWolfSVG({
-    archetypeName: wolf.archetype_name,
-    rarity: wolf.rarity,
-    seed: wolf.seed,
-    terrain: wolf.quiz_answers?.terrain,
-  });
+  const now = +new Date();
+  const hasImage = !!wolf.image_url;
+  const imageExpired = wolf.image_expires_at
+    ? new Date(wolf.image_expires_at).getTime() < now
+    : false;
+  const showImage = hasImage && !imageExpired;
+  const svg = showImage
+    ? ''
+    : generateWolfSVG({
+        archetypeName: wolf.archetype_name,
+        rarity: wolf.rarity,
+        seed: wolf.seed,
+        terrain: wolf.quiz_answers?.terrain,
+      });
 
   const rarityStyle: Record<string, { text: string; badge: string }> = {
     common: { text: 'text-green-400', badge: 'bg-green-600/20 border-green-500/40' },
@@ -70,16 +80,28 @@ export default async function WolfSharePage({ params }: Props) {
           <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
             {wolf.archetype_name}
           </h1>
-          <div className={`inline-block mt-2 px-4 py-1 rounded-full border text-xs font-bold uppercase tracking-[0.2em] ${rs.text} ${rs.badge}`}>
-            ✦ {wolf.rarity} ✦
+          <div className={`inline-flex items-center gap-1 mt-2 px-4 py-1 rounded-full border text-xs font-bold uppercase tracking-[0.2em] ${rs.text} ${rs.badge}`}>
+            <Star className="w-3 h-3" /> {wolf.rarity} <Star className="w-3 h-3" />
           </div>
         </div>
 
-        {/* SVG Avatar */}
-        <div
-          className="flex justify-center mb-6"
-          dangerouslySetInnerHTML={{ __html: svg }}
-        />
+        {/* Wolf Image */}
+        {showImage ? (
+          <div className="relative aspect-square mb-4 rounded-2xl overflow-hidden">
+            <Image
+              src={wolf.image_url}
+              alt={wolf.archetype_name}
+              fill
+              className="object-cover rounded-2xl"
+              sizes="(max-width: 448px) 100vw, 448px"
+            />
+          </div>
+        ) : (
+          <div
+            className="flex justify-center mb-4"
+            dangerouslySetInnerHTML={{ __html: svg }}
+          />
+        )}
 
         {/* Details */}
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 space-y-5">

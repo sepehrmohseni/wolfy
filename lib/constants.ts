@@ -5,3 +5,7 @@ export const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 export const APP_SECRET = process.env.APP_SECRET || 'default-dev-secret';
 export const ADMIN_SECRET = process.env.ADMIN_SECRET || '';
 export const CACHE_TTL_HOURS = parseInt(process.env.CACHE_TTL_HOURS || '24', 10);
+export const IMAGE_ENABLED = process.env.IMAGE_ENABLED !== 'false';
+export const IMAGE_RETENTION_DAYS = parseInt(process.env.IMAGE_RETENTION_DAYS || '30', 10);
+export const IMAGE_DELETE_ON_DOWNLOAD = process.env.IMAGE_DELETE_ON_DOWNLOAD !== 'false';
+export const CRON_SECRET = process.env.CRON_SECRET || '';

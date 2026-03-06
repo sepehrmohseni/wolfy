@@ -1,6 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import {
+  Sword, Leaf, Eye, RefreshCw,
+  TreePine, Mountain, CloudFog, Wheat,
+  Zap, Moon, BatteryCharging, Sparkles,
+  Crown, Shield, Telescope, Dog,
+  Flame, Snowflake, Eclipse, CloudLightning,
+} from 'lucide-react';
 
 export interface QuizAnswers {
   danger: string;
@@ -15,50 +22,50 @@ const questions = [
     key: 'danger',
     question: 'When facing danger, you…',
     options: [
-      { value: 'fight', label: '⚔️ Fight', desc: 'Stand your ground and face it head-on' },
-      { value: 'hide', label: '🌿 Hide', desc: 'Conceal yourself and wait for the right moment' },
-      { value: 'observe', label: '👁️ Observe', desc: 'Study the threat before making a move' },
-      { value: 'adapt', label: '🔄 Adapt', desc: 'Change your approach to overcome it' },
+      { value: 'fight', icon: Sword, iconColor: 'text-red-400', label: 'Fight', desc: 'Stand your ground and face it head-on' },
+      { value: 'hide', icon: Leaf, iconColor: 'text-green-400', label: 'Hide', desc: 'Conceal yourself and wait for the right moment' },
+      { value: 'observe', icon: Eye, iconColor: 'text-blue-400', label: 'Observe', desc: 'Study the threat before making a move' },
+      { value: 'adapt', icon: RefreshCw, iconColor: 'text-purple-400', label: 'Adapt', desc: 'Change your approach to overcome it' },
     ],
   },
   {
     key: 'terrain',
     question: 'Your preferred terrain…',
     options: [
-      { value: 'deep forest', label: '🌲 Deep Forest', desc: 'Ancient woods where light barely reaches' },
-      { value: 'snowy mountain', label: '🏔️ Snowy Mountain', desc: 'Peaks where the air is thin and the view is endless' },
-      { value: 'misty valley', label: '🌫️ Misty Valley', desc: 'Shrouded lowlands full of mystery' },
-      { value: 'open plains', label: '🌾 Open Plains', desc: 'Wide grasslands under endless sky' },
+      { value: 'deep forest', icon: TreePine, iconColor: 'text-emerald-400', label: 'Deep Forest', desc: 'Ancient woods where light barely reaches' },
+      { value: 'snowy mountain', icon: Mountain, iconColor: 'text-sky-400', label: 'Snowy Mountain', desc: 'Peaks where the air is thin and the view is endless' },
+      { value: 'misty valley', icon: CloudFog, iconColor: 'text-gray-400', label: 'Misty Valley', desc: 'Shrouded lowlands full of mystery' },
+      { value: 'open plains', icon: Wheat, iconColor: 'text-yellow-400', label: 'Open Plains', desc: 'Wide grasslands under endless sky' },
     ],
   },
   {
     key: 'night',
     question: 'At night, you feel…',
     options: [
-      { value: 'powerful', label: '💪 Powerful', desc: 'Darkness amplifies your strength' },
-      { value: 'peaceful', label: '🌙 Peaceful', desc: 'The moon brings you serenity' },
-      { value: 'restless', label: '⚡ Restless', desc: 'You have energy that demands release' },
-      { value: 'curious', label: '🔮 Curious', desc: 'Night reveals what day conceals' },
+      { value: 'powerful', icon: Zap, iconColor: 'text-amber-400', label: 'Powerful', desc: 'Darkness amplifies your strength' },
+      { value: 'peaceful', icon: Moon, iconColor: 'text-indigo-400', label: 'Peaceful', desc: 'The moon brings you serenity' },
+      { value: 'restless', icon: BatteryCharging, iconColor: 'text-yellow-400', label: 'Restless', desc: 'You have energy that demands release' },
+      { value: 'curious', icon: Sparkles, iconColor: 'text-violet-400', label: 'Curious', desc: 'Night reveals what day conceals' },
     ],
   },
   {
     key: 'role',
     question: 'Your pack role…',
     options: [
-      { value: 'leader', label: '👑 Leader', desc: 'Guide the pack with wisdom and strength' },
-      { value: 'guardian', label: '🛡️ Guardian', desc: 'Protect those who cannot protect themselves' },
-      { value: 'scout', label: '🔭 Scout', desc: 'Explore ahead and find the way' },
-      { value: 'lone wolf', label: '🐺 Lone Wolf', desc: 'Walk your own path, beholden to none' },
+      { value: 'leader', icon: Crown, iconColor: 'text-amber-400', label: 'Leader', desc: 'Guide the pack with wisdom and strength' },
+      { value: 'guardian', icon: Shield, iconColor: 'text-cyan-400', label: 'Guardian', desc: 'Protect those who cannot protect themselves' },
+      { value: 'scout', icon: Telescope, iconColor: 'text-teal-400', label: 'Scout', desc: 'Explore ahead and find the way' },
+      { value: 'lone wolf', icon: Dog, iconColor: 'text-emerald-400', label: 'Lone Wolf', desc: 'Walk your own path, beholden to none' },
     ],
   },
   {
     key: 'element',
     question: 'Your spirit element…',
     options: [
-      { value: 'fire', label: '🔥 Fire', desc: 'Burning passion and fierce determination' },
-      { value: 'ice', label: '❄️ Ice', desc: 'Cool clarity and crystalline focus' },
-      { value: 'shadow', label: '🌑 Shadow', desc: 'Stealth, mystery, and hidden power' },
-      { value: 'storm', label: '⛈️ Storm', desc: 'Untamed energy and raw force' },
+      { value: 'fire', icon: Flame, iconColor: 'text-orange-400', label: 'Fire', desc: 'Burning passion and fierce determination' },
+      { value: 'ice', icon: Snowflake, iconColor: 'text-sky-400', label: 'Ice', desc: 'Cool clarity and crystalline focus' },
+      { value: 'shadow', icon: Eclipse, iconColor: 'text-gray-400', label: 'Shadow', desc: 'Stealth, mystery, and hidden power' },
+      { value: 'storm', icon: CloudLightning, iconColor: 'text-violet-400', label: 'Storm', desc: 'Untamed energy and raw force' },
     ],
   },
 ];
@@ -122,7 +129,8 @@ export function Quiz({ onComplete }: Props) {
                   : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
               }`}
             >
-              <div className="font-semibold text-white text-base">
+              <div className="font-semibold text-white text-base flex items-center gap-2">
+                {opt.icon && <opt.icon className={`w-5 h-5 ${opt.iconColor}`} />}
                 {opt.label}
               </div>
               <div className="text-sm text-gray-400 mt-1">{opt.desc}</div>
