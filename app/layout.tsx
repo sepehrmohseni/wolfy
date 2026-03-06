@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { SnowEffect } from "./components/SnowEffect";
 import "./globals.css";
 
@@ -39,6 +40,7 @@ export default function RootLayout({
       >
         <SnowEffect />
         <div className="relative z-20">{children}</div>
+        <Analytics />
       </body>
     </html>
   );
