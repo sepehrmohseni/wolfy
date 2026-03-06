@@ -7,5 +7,5 @@ export const ADMIN_SECRET = process.env.ADMIN_SECRET || '';
 export const CACHE_TTL_HOURS = parseInt(process.env.CACHE_TTL_HOURS || '24', 10);
 export const IMAGE_ENABLED = process.env.IMAGE_ENABLED !== 'false';
 export const IMAGE_RETENTION_DAYS = parseInt(process.env.IMAGE_RETENTION_DAYS || '30', 10);
-export const IMAGE_DELETE_ON_DOWNLOAD = process.env.IMAGE_DELETE_ON_DOWNLOAD !== 'false';
+export const IMAGE_DELETE_ON_DOWNLOAD = process.env.IMAGE_DELETE_ON_DOWNLOAD === 'true';
 export const CRON_SECRET = process.env.CRON_SECRET || '';
