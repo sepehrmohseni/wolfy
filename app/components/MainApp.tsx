@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Mail, Dog, Loader, User } from 'lucide-react';
+import { Mail, Dog, Loader, User, TreePine, Moon, CloudSnow } from 'lucide-react';
 import { createSupabaseBrowser } from '@/lib/supabase/client';
 import { AuthForm } from './AuthForm';
 import { Quiz, type QuizAnswers } from './Quiz';
@@ -30,15 +30,19 @@ interface WolfResult {
   wolfId: string;
 }
 
+type LimitKind = 'global' | 'user' | null;
+
 export function MainApp({ initialUser }: { initialUser: UserInfo | null }) {
   const [user, setUser] = useState<UserInfo | null>(initialUser);
   const [step, setStep] = useState<
-    'landing' | 'auth' | 'quiz' | 'generating' | 'result'
+    'landing' | 'auth' | 'quiz' | 'generating' | 'result' | 'limit'
   >('landing');
+  const [limitKind, setLimitKind] = useState<LimitKind>(null);
   const [quizAnswers, setQuizAnswers] = useState<QuizAnswers | null>(null);
   const [turnstileToken, setTurnstileToken] = useState('');
   const [result, setResult] = useState<WolfResult | null>(null);
   const [error, setError] = useState('');
+  const [checkingLimits, setCheckingLimits] = useState(false);
 
   const supabase = createSupabaseBrowser();
 
@@ -60,10 +64,39 @@ export function MainApp({ initialUser }: { initialUser: UserInfo | null }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const checkRateLimits = useCallback(async () => {
+    setCheckingLimits(true);
+    try {
+      const res = await fetch('/api/rate-check');
+      if (!res.ok) return true; // allow on error
+      const data = await res.json();
+      if (!data.globalAllowed) {
+        setLimitKind('global');
+        setStep('limit');
+        return false;
+      }
+      if (!data.userAllowed) {
+        setLimitKind('user');
+        setStep('limit');
+        return false;
+      }
+      return true;
+    } catch {
+      return true; // allow on network error
+    } finally {
+      setCheckingLimits(false);
+    }
+  }, []);
+
   useEffect(() => {
-    if (user?.verified && step === 'landing') setStep('quiz');
-    else if (user && !user.verified && step === 'landing') setStep('auth');
-  }, [user, step]);
+    if (user?.verified && step === 'landing') {
+      checkRateLimits().then((allowed) => {
+        if (allowed) setStep('quiz');
+      });
+    } else if (user && !user.verified && step === 'landing') {
+      setStep('auth');
+    }
+  }, [user, step, checkRateLimits]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -71,6 +104,7 @@ export function MainApp({ initialUser }: { initialUser: UserInfo | null }) {
     setStep('landing');
     setResult(null);
     setQuizAnswers(null);
+    setLimitKind(null);
   };
 
   const handleQuizComplete = (answers: QuizAnswers) => {
@@ -89,7 +123,14 @@ export function MainApp({ initialUser }: { initialUser: UserInfo | null }) {
         body: JSON.stringify({ answers: quizAnswers, turnstileToken }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Generation failed');
+      if (!res.ok) {
+        if (res.status === 429) {
+          setLimitKind(data.error?.includes('Global') ? 'global' : 'user');
+          setStep('limit');
+          return;
+        }
+        throw new Error(data.error || 'Generation failed');
+      }
       setResult(data);
       setStep('result');
     } catch (err: unknown) {
@@ -172,10 +213,18 @@ export function MainApp({ initialUser }: { initialUser: UserInfo | null }) {
             your spirit with the pack.
           </p>
           <button
-            onClick={() => setStep(user?.verified ? 'quiz' : 'auth')}
-            className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-lg rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(16,185,129,0.4)] active:scale-95"
+            onClick={async () => {
+              if (user?.verified) {
+                const allowed = await checkRateLimits();
+                if (allowed) setStep('quiz');
+              } else {
+                setStep('auth');
+              }
+            }}
+            disabled={checkingLimits}
+            className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-bold text-lg rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(16,185,129,0.4)] active:scale-95"
           >
-            Begin the Journey
+            {checkingLimits ? 'Checking…' : 'Begin the Journey'}
           </button>
         </div>
       )}
@@ -293,6 +342,98 @@ export function MainApp({ initialUser }: { initialUser: UserInfo | null }) {
           <WolfCard result={result} />
         </div>
       )}
+
+      {/* ─── RATE LIMIT ─── */}
+      {step === 'limit' && (
+        <div className="flex-1 flex items-center justify-center px-4 py-20">
+          <div className="max-w-lg w-full text-center">
+            {/* Nordic forest scene */}
+            <div className="relative mb-8">
+              <div className="flex justify-center items-end gap-1 opacity-60 mb-4">
+                <TreePine className="w-8 h-8 text-emerald-800" />
+                <TreePine className="w-12 h-12 text-emerald-700" />
+                <TreePine className="w-16 h-16 text-emerald-600" />
+                <Moon className="w-8 h-8 text-blue-200/60 -mt-12 mx-2" />
+                <TreePine className="w-14 h-14 text-emerald-700" />
+                <TreePine className="w-10 h-10 text-emerald-800" />
+                <TreePine className="w-6 h-6 text-emerald-900" />
+              </div>
+              <div className="flex justify-center gap-1 mb-6">
+                {[...Array(5)].map((_, i) => (
+                  <CloudSnow
+                    key={i}
+                    className="w-4 h-4 text-blue-200/30 animate-pulse"
+                    style={{ animationDelay: `${i * 0.4}s` }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 sm:p-10">
+              {limitKind === 'global' ? (
+                <>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+                    The Forest is Sleeping
+                  </h2>
+                  <p className="text-gray-400 leading-relaxed mb-2">
+                    The wolves have retreated to their dens for the night. Our forest can only
+                    sustain a limited number of summonings each day to keep the magic alive.
+                  </p>
+                  <p className="text-gray-500 text-sm mb-6">
+                    The daily generation limit has been reached. Come back tomorrow when the
+                    forest awakens with the dawn.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+                    Your Pack is Complete
+                  </h2>
+                  <p className="text-gray-400 leading-relaxed mb-2">
+                    You&apos;ve already summoned your wolf today. The spirits need time to
+                    rest and recharge before they can reveal another archetype.
+                  </p>
+                  <p className="text-gray-500 text-sm mb-6">
+                    Your daily generation limit has been reached. Return tomorrow for a
+                    fresh journey into the forest.
+                  </p>
+                </>
+              )}
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Link
+                  href="/profile"
+                  className="px-6 py-3 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 font-medium rounded-xl border border-emerald-500/20 transition-all duration-200"
+                >
+                  View My Wolves
+                </Link>
+                <button
+                  onClick={handleSignOut}
+                  className="px-6 py-3 text-gray-500 hover:text-gray-300 transition-colors text-sm"
+                >
+                  Sign out
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── FOOTER ─── */}
+      <footer className="relative z-10 py-6 text-center">
+        <p className="text-xs text-gray-600">
+          made by a human called{' '}
+          <a
+            href="https://sepr.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-emerald-600 hover:text-emerald-400 transition-colors"
+          >
+            sepehr
+          </a>
+          .
+        </p>
+      </footer>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Dog } from 'lucide-react';
 import { createSupabaseBrowser } from '@/lib/supabase/client';
 
@@ -27,8 +28,14 @@ export function AuthForm({ onSuccess }: Props) {
 
     try {
       if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
+        // Supabase returns a user with empty identities when email already exists
+        if (data.user && data.user.identities && data.user.identities.length === 0) {
+          setError('An account with this email already exists.');
+          setMode('signin');
+          return;
+        }
         setMessage('Check your email for a verification link!');
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -39,7 +46,14 @@ export function AuthForm({ onSuccess }: Props) {
       }
       onSuccess();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Authentication failed');
+      const msg = err instanceof Error ? err.message : 'Authentication failed';
+      // Also catch explicit "already registered" messages from some Supabase configs
+      if (msg.toLowerCase().includes('already registered') || msg.toLowerCase().includes('already been registered')) {
+        setError('An account with this email already exists. Please sign in instead.');
+        setMode('signin');
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -143,6 +157,15 @@ export function AuthForm({ onSuccess }: Props) {
           ? 'Already have an account? Sign in'
           : "Don't have an account? Sign up"}
       </button>
+
+      {mode === 'signin' && (
+        <Link
+          href="/auth/reset-password"
+          className="block text-center mt-3 text-xs text-gray-600 hover:text-gray-400 transition-colors"
+        >
+          Forgot your password?
+        </Link>
+      )}
     </div>
   );
 }
