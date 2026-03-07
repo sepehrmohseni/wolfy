@@ -89,7 +89,7 @@ export function MainApp({ initialUser }: { initialUser: UserInfo | null }) {
   }, []);
 
   useEffect(() => {
-    if (user?.verified && step === 'landing') {
+    if (user?.verified && (step === 'landing' || step === 'auth')) {
       checkRateLimits().then((allowed) => {
         if (allowed) setStep('quiz');
       });
@@ -258,9 +258,21 @@ export function MainApp({ initialUser }: { initialUser: UserInfo | null }) {
             </div>
           ) : (
             <AuthForm
-              onSuccess={() =>
-                setStep(user?.verified ? 'quiz' : 'auth')
-              }
+              onSuccess={async (mode) => {
+                if (mode === 'signin') {
+                  const { data: { user: freshUser } } = await supabase.auth.getUser();
+                  if (freshUser) {
+                    const verified = !!freshUser.email_confirmed_at;
+                    setUser({ id: freshUser.id, email: freshUser.email!, verified });
+                    if (verified) {
+                      const allowed = await checkRateLimits();
+                      if (allowed) setStep('quiz');
+                      return;
+                    }
+                  }
+                }
+                // For signup, stay on auth — verification prompt will show
+              }}
             />
           )}
         </div>

@@ -26,6 +26,7 @@ interface Props {
 export function WolfCard({ result }: Props) {
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [imageDeleted, setImageDeleted] = useState(false);
   const { archetype, svg, imageUrl, imageExpiresAt, wolfId } = result;
 
@@ -57,7 +58,10 @@ export function WolfCard({ result }: Props) {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      setImageDeleted(true);
+      // If the server deleted the image on download, reflect it in UI
+      if (res.headers.get('X-Image-Deleted') === 'true') {
+        setImageDeleted(true);
+      }
     } catch (err) {
       console.error('Download error:', err);
     } finally {
@@ -105,11 +109,25 @@ export function WolfCard({ result }: Props) {
       {/* Wolf Image */}
       {currentImageUrl ? (
         <div className={`relative aspect-square mb-4 rounded-2xl overflow-hidden ${rs.glow}`}>
+          {!imageLoaded && (
+            <div className="absolute inset-0 bg-white/5 rounded-2xl animate-pulse">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-[shimmer_1.5s_infinite]" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <svg viewBox="0 0 32 32" className="w-12 h-12 opacity-20" aria-hidden="true">
+                  <path d="M7 25 L10 10 L14 17 L16 7 L18 17 L22 10 L25 25 Z" fill="#10b981" />
+                  <circle cx="12.5" cy="19" r="1.8" fill="#fbbf24" />
+                  <circle cx="19.5" cy="19" r="1.8" fill="#fbbf24" />
+                </svg>
+              </div>
+            </div>
+          )}
           <Image
             src={currentImageUrl}
             alt={archetype.archetypeName}
             fill
-            className="object-cover rounded-2xl"
+            loading="lazy"
+            onLoad={() => setImageLoaded(true)}
+            className={`object-cover rounded-2xl transition-opacity duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
             sizes="(max-width: 448px) 100vw, 448px"
           />
         </div>
@@ -127,16 +145,6 @@ export function WolfCard({ result }: Props) {
           <p className="text-xs text-amber-300/90 leading-relaxed">
             This image will be <strong>auto-deleted in {daysLeft} day{daysLeft !== 1 ? 's' : ''}</strong> to save storage.
             Download it to keep it forever.
-          </p>
-        </div>
-      )}
-
-      {/* Download deleted notice */}
-      {imageDeleted && (
-        <div className="flex items-start gap-2 mb-4 px-3 py-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-          <Trash2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-          <p className="text-xs text-emerald-300/90 leading-relaxed">
-            Image downloaded and removed from our servers. It&apos;s saved on your device.
           </p>
         </div>
       )}
@@ -178,11 +186,15 @@ export function WolfCard({ result }: Props) {
             onClick={handleDownload}
             disabled={downloading}
             className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 text-white font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5"
-            title="Download will remove the image from our servers"
           >
             <Download className="w-4 h-4" />
-            {downloading ? 'Downloading...' : 'Download & Save'}
+            {downloading ? 'Downloading…' : 'Download'}
           </button>
+        )}
+        {imageDeleted && (
+          <div className="flex-1 py-3 bg-amber-600/20 text-amber-300 font-medium rounded-xl flex items-center justify-center gap-1.5 text-sm">
+            <Trash2 className="w-4 h-4" /> Image saved & removed from cloud
+          </div>
         )}
         <button
           onClick={handleCopy}
@@ -191,13 +203,6 @@ export function WolfCard({ result }: Props) {
           {copied ? <><Check className="w-4 h-4 inline-block mr-1" /> Copied!</> : <><Link2 className="w-4 h-4 inline-block mr-1" /> Share Link</>}
         </button>
       </div>
-
-      {/* Download disclaimer */}
-      {currentImageUrl && (
-        <p className="text-[10px] text-gray-600 text-center mt-3 leading-relaxed">
-          Downloading saves the image to your device and deletes it from our servers to reduce storage costs.
-        </p>
-      )}
     </div>
   );
 }

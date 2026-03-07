@@ -6,7 +6,7 @@ import { Dog } from 'lucide-react';
 import { createSupabaseBrowser } from '@/lib/supabase/client';
 
 interface Props {
-  onSuccess: () => void;
+  onSuccess: (mode: 'signin' | 'signup') => void;
 }
 
 export function AuthForm({ onSuccess }: Props) {
@@ -44,7 +44,7 @@ export function AuthForm({ onSuccess }: Props) {
         });
         if (error) throw error;
       }
-      onSuccess();
+      onSuccess(mode);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Authentication failed';
       // Also catch explicit "already registered" messages from some Supabase configs
@@ -81,6 +81,8 @@ export function AuthForm({ onSuccess }: Props) {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            name="email"
             className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
             placeholder="wolf@forest.den"
           />
@@ -96,6 +98,7 @@ export function AuthForm({ onSuccess }: Props) {
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="off"
               className="w-full px-4 py-3 pr-12 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
               placeholder="••••••••"
             />

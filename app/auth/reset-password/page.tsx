@@ -71,6 +71,8 @@ export default function ResetPasswordPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              name="email"
               className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
               placeholder="wolf@forest.den"
             />

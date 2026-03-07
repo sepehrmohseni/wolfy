@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireVerifiedUser } from '@/lib/auth';
+import { createSupabaseAdmin } from '@/lib/supabase/server';
 import { deleteWolfImage } from '@/lib/storage';
 import { IMAGE_DELETE_ON_DOWNLOAD } from '@/lib/constants';
-import { createSupabaseAdmin } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
   // Auth: only the wolf owner can download
@@ -46,9 +46,10 @@ export async function GET(request: NextRequest) {
   const contentType = imageResponse.headers.get('content-type') || 'image/png';
   const safeName = wolf.archetype_name.replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '-');
 
-  // Delete from storage after download if configured
+  // Conditionally delete the image from storage after download
+  let imageDeleted = false;
   if (IMAGE_DELETE_ON_DOWNLOAD) {
-    await deleteWolfImage(wolfId);
+    imageDeleted = await deleteWolfImage(wolfId);
   }
 
   return new NextResponse(imageBuffer, {
@@ -56,6 +57,7 @@ export async function GET(request: NextRequest) {
       'Content-Type': contentType,
       'Content-Disposition': `attachment; filename="${safeName}.png"`,
       'Cache-Control': 'no-store',
+      ...(imageDeleted && { 'X-Image-Deleted': 'true' }),
     },
   });
 }
